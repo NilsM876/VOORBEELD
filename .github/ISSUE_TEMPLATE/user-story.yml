@@ -1,0 +1,45 @@
+name: User story
+description: One user story for the backlog
+title: "Story: "
+labels: ["user story"]
+body:
+  - type: input
+    id: who
+    attributes:
+      label: As a
+      placeholder: "type of user, for example: a student looking for a room"
+    validations:
+      required: true
+  - type: input
+    id: what
+    attributes:
+      label: I want
+      placeholder: "what they want to do"
+    validations:
+      required: true
+  - type: input
+    id: why
+    attributes:
+      label: So that
+      placeholder: "why it matters to them"
+    validations:
+      required: true
+  - type: textarea
+    id: criteria
+    attributes:
+      label: Acceptance criteria
+      description: When is this story done? One line per criterion, something you can check.
+      placeholder: |
+        - ...
+        - ...
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - Must have
+        - Nice to have
+    validations:
+      required: true
