@@ -10,7 +10,7 @@ One or two sentences: what it does, and for whom.
 Everyone adds their own line, in their own commit.
 
 | Name | GitHub account | Works on |
-|---|---|---|
+|Senne Van Vaerenberg|sennevanvae|building an app ig|
 | | | |
 
 ## Install and run
