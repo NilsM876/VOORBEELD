@@ -14,7 +14,7 @@ Everyone adds their own line, in their own commit.
 |Senne Van Vaerenberg|sennevanvae|building an app ig|
 | Nils Matthijs | NilsM876 | website |
 
-| | | |
+| Alexander Smet| AlexanderSmet | contemplating businessmodel |
 
 | | | |
 
