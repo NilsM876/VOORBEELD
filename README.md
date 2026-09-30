@@ -12,6 +12,13 @@ Everyone adds their own line, in their own commit.
 | Name | GitHub account | Works on |
 
 |Senne Van Vaerenberg|sennevanvae|building an app ig|
+
+| | | |
+
+| | | |
+
+| | | | 
+
 | | | |
 
 ## Install and run
