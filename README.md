@@ -12,7 +12,8 @@ Everyone adds their own line, in their own commit.
 | Name | GitHub account | Works on |
 | Nils Matthijs | NilsM876 | website |
 | Alexander Smet | AlexanderSmet | website |
-| Stef Hoegaerts | stefhoegaerts | website | .
+| Stef Hoegaerts | stefhoegaerts | website | 
+| Brent Vandevyvere | Brenttt-code | website | 
 
 ## Install and run
 
