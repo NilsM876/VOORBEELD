@@ -6,12 +6,17 @@ from flask import Blueprint, current_app, render_template, request, session
 
 from algorithm import CORRELATION_LIMITATION, PortfolioCommunity, calculate_portfolio
 
+# Een Blueprint groepeert routes. app.py koppelt deze groep aan Flask.
 bp = Blueprint("main", __name__)
 
 
 def get_community():
+    # Bewaar één community per Flask-app, niet een nieuwe per webrequest.
     if "portfolio_community" not in current_app.extensions:
-        users = json.loads((Path(__file__).resolve().parents[1] / "test_data.json").read_text(encoding="utf-8"))
+        project_folder = Path(__file__).resolve().parent.parent
+        data_file = project_folder / "test_data.json"
+        text = data_file.read_text(encoding="utf-8")
+        users = json.loads(text)
         current_app.extensions["portfolio_community"] = PortfolioCommunity(users)
     return current_app.extensions["portfolio_community"]
 
@@ -19,24 +24,49 @@ def get_community():
 @bp.route("/", methods=["GET", "POST"])
 def home():
     community = get_community()
-    result = error = opened = None
+    result = None
+    error = None
+    opened = None
     comments = []
     owner = request.form.get("owner", "")
     rows = [{"name": "", "return": "", "volatility": "", "weight": ""}]
     rate = request.form.get("risk_free_rate", "2")
     username = request.form.get("username", "")
+    # De sessie onthoudt de actieve naam voor deze browser. Dit is geen login.
     viewer = session.get("portfolio_viewer")
     status = 200
     if request.method == "POST":
         try:
             action = request.form.get("action", "calculate")
             if action in ("calculate", "publish"):
-                fields = {key: request.form.getlist(key) for key in rows[0]}
-                if len({len(values) for values in fields.values()}) != 1:
-                    raise ValueError("De aandelenvelden zijn onvolledig.")
-                rows = [dict(zip(fields, values)) for values in zip(*fields.values())]
-                stocks = [{key: value.strip() if key == "name" else float(value.replace(",", ".")) / 100
-                           for key, value in row.items()} for row in rows]
+                # HTML herhaalt dezelfde veldnamen voor elke aandelenrij.
+                # getlist haalt alle waarden van één veldnaam in rijvolgorde op.
+                field_names = ("name", "return", "volatility", "weight")
+                fields = {}
+                for field_name in field_names:
+                    fields[field_name] = request.form.getlist(field_name)
+
+                number_of_stocks = len(fields["name"])
+                for field_name in field_names:
+                    if len(fields[field_name]) != number_of_stocks:
+                        raise ValueError("De aandelenvelden zijn onvolledig.")
+
+                rows = []
+                for index in range(number_of_stocks):
+                    row = {}
+                    for field_name in field_names:
+                        row[field_name] = fields[field_name][index]
+                    rows.append(row)
+
+                # rows bewaart tekst voor het formulier; stocks bevat getallen.
+                # De gebruiker voert 10 in voor 10%; de berekening gebruikt 0.10.
+                stocks = []
+                for row in rows:
+                    stock = {"name": row["name"].strip()}
+                    for field_name in ("return", "volatility", "weight"):
+                        text = row[field_name].replace(",", ".")
+                        stock[field_name] = float(text) / 100
+                    stocks.append(stock)
                 risk_free_rate = float(rate.replace(",", ".")) / 100
                 result = calculate_portfolio(stocks, risk_free_rate)
                 if action == "publish":
@@ -47,6 +77,7 @@ def home():
                 if not viewer:
                     raise ValueError("Publiceer eerst een portefeuille met een unieke gebruikersnaam.")
                 if action == "unlock":
+                    # Simulatie: hier wordt geen echte betaling gecontroleerd.
                     community.unlock_portfolio(viewer, owner, 5)
                 else:
                     community.add_comment(viewer, owner, request.form.get("message", ""))

@@ -31,9 +31,27 @@ def read_text(prompt):
         print("Deze waarde mag niet leeg zijn.")
 
 
+def total_weight(stocks):
+    """Tel de gewichten van alle aandelen op."""
+    total = 0
+    for stock in stocks:
+        total += stock["weight"]
+    return total
+
+
+def has_portfolio_risk(stocks):
+    """Er moet minstens één aandeel met positief gewicht en risico zijn."""
+    for stock in stocks:
+        if stock["weight"] * stock["volatility"] > 0:
+            return True
+    return False
+
+
 def enter_portfolio(community):
     print("Voer percentages in als 10 voor 10%. Gewichten moeten samen 100% zijn.")
-    existing_names = {user["username"] for user in community.leaderboard()}
+    existing_names = []
+    for user in community.leaderboard():
+        existing_names.append(user["username"])
     while True:
         username = read_text("Gebruikersnaam: ")
         if username not in existing_names:
@@ -57,11 +75,11 @@ def enter_portfolio(community):
             "volatility": read_number("Jaarlijkse standaarddeviatie (%, minimaal 0): ", 0) / 100,
             "weight": read_number("Gewicht (%, 0 tot 100): ", 0, 100) / 100,
         })
-    while abs(sum(stock["weight"] for stock in stocks) - 1) > 1e-8:
+    while abs(total_weight(stocks) - 1) > 1e-8:
         print("De gewichten moeten samen 100% zijn. Voer de gewichten opnieuw in.")
         for stock in stocks:
             stock["weight"] = read_number(f"Gewicht {stock['name']} (%, 0 tot 100): ", 0, 100) / 100
-    while not any(stock["weight"] * stock["volatility"] > 0 for stock in stocks):
+    while not has_portfolio_risk(stocks):
         print("De portefeuillevolatiliteit moet positief zijn om de Sharpe ratio te berekenen.")
         for stock in stocks:
             stock["volatility"] = read_number(

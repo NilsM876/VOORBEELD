@@ -1,4 +1,4 @@
-﻿"""Exercise the website without requiring a database connection."""
+"""Exercise the website without requiring a database connection."""
 import unittest
 
 from flask import Flask
@@ -16,7 +16,7 @@ class WebsiteTests(unittest.TestCase):
         self.data = MultiDict([
             ("name", "A"), ("return", "10"), ("volatility", "20"), ("weight", "60"),
             ("name", "B"), ("return", "6"), ("volatility", "10"), ("weight", "40"),
-            ("risk_free_rate", "2"), ("username", "Tester"), ("action", "calculate"),
+            ("risk_free_rate", "2"), ("username", "persoon D"), ("action", "calculate"),
         ])
 
     def test_form_and_percentage_conversion(self):
@@ -39,10 +39,10 @@ class WebsiteTests(unittest.TestCase):
     def test_publish_unlock_and_comment(self):
         self.data["action"] = "publish"
         self.assertEqual(self.client.post("/", data=self.data).status_code, 200)
-        self.assertIn("Tester", self.client.get("/").get_data(as_text=True))
-        action = {"owner": "Bram", "action": "comment", "message": "Interessant!"}
+        self.assertIn("persoon D", self.client.get("/").get_data(as_text=True))
+        action = {"owner": "persoon B", "action": "comment", "message": "Interessant!"}
         self.assertEqual(self.client.post("/", data=action).status_code, 400)
-        self.assertEqual(self.client.post("/", data={"owner": "Bram", "action": "unlock"}).status_code, 200)
+        self.assertEqual(self.client.post("/", data={"owner": "persoon B", "action": "unlock"}).status_code, 200)
         response = self.client.post("/", data=action)
         self.assertEqual(response.status_code, 200)
         self.assertIn("Interessant!", response.get_data(as_text=True))

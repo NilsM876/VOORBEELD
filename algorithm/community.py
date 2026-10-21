@@ -6,13 +6,22 @@ from .portfolio import calculate_portfolio, finite_number, leaderboard
 
 
 class PortfolioCommunity:
-    """Keep portfolio access per (viewer, owner) for the current session."""
+    """Bundel de gegevens en functies van één community.
+
+    self verwijst naar deze community. De gegevens bestaan zolang dit object
+    bestaat, dus over meerdere webrequests heen, tot de server stopt.
+    """
 
     UNLOCK_PRICE_EUR = 5
 
     def __init__(self, users=()):
+        # __init__ wordt uitgevoerd bij PortfolioCommunity(users).
+        # Dictionary: gebruikersnaam -> portefeuille.
         self._users = {}
-        self._unlocks = set()
+        # Dictionary: tuple (bezoeker, eigenaar) -> True.
+        # ('persoon A', 'persoon B') geeft persoon A toegang tot persoon B, niet omgekeerd.
+        self._unlocks = {}
+        # Dictionary: eigenaar -> lijst met reacties.
         self._comments = {}
         for user in users:
             self.add_user(user["username"], user["stocks"], user["risk_free_rate"])
@@ -23,7 +32,10 @@ class PortfolioCommunity:
         username = username.strip()
         if username in self._users:
             raise ValueError("Username already exists")
+        # Controleer de invoer voordat deze wordt opgeslagen.
         calculate_portfolio(stocks, risk_free_rate)
+        # deepcopy kopieert ook de lijsten en dictionaries binnenin.
+        # Zo kan de aanroeper onze opgeslagen gegevens niet achteraf wijzigen.
         self._users[username] = deepcopy({
             "username": username, "stocks": stocks, "risk_free_rate": risk_free_rate
         })
@@ -44,7 +56,7 @@ class PortfolioCommunity:
         finite_number(payment_eur, "Payment")
         if payment_eur != self.UNLOCK_PRICE_EUR:
             raise ValueError("Simulated payment must be exactly EUR 5")
-        self._unlocks.add((viewer, owner))
+        self._unlocks[(viewer, owner)] = True
         return self.get_portfolio(viewer, owner)
 
     def get_portfolio(self, viewer, owner):
@@ -62,7 +74,9 @@ class PortfolioCommunity:
         if not isinstance(message, str) or not message.strip():
             raise ValueError("Comment cannot be empty")
         comment = {"author": author, "message": message.strip()}
-        self._comments.setdefault(owner, []).append(comment)
+        if owner not in self._comments:
+            self._comments[owner] = []
+        self._comments[owner].append(comment)
         return deepcopy(comment)
 
     def get_comments(self, viewer, owner):

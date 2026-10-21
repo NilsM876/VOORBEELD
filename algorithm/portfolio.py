@@ -9,7 +9,8 @@ CORRELATION_LIMITATION = (
 
 
 def finite_number(value, label):
-    """Reject missing, boolean, nonnumeric and nonfinite inputs."""
+    """Weiger invoer die geen bruikbaar getal is."""
+    # Python behandelt True en False als getallen; hier aanvaarden we die niet.
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ValueError(f"{label} must be a finite number")
     try:
@@ -22,7 +23,7 @@ def finite_number(value, label):
 
 
 def calculate_portfolio(stocks, risk_free_rate):
-    """Calculate portfolio Sharpe ratio assuming zero correlations."""
+    """Bereken rendement, risico en Sharpe bij veronderstelde nulcorrelaties."""
 
     if not stocks:
         raise ValueError("Portfolio cannot be empty")
@@ -36,22 +37,28 @@ def calculate_portfolio(stocks, risk_free_rate):
         if stock["weight"] < 0 or stock["volatility"] < 0:
             raise ValueError("Weight and volatility must be nonnegative")
 
-    total_weight = fsum(stock["weight"] for stock in stocks)
+    weights = []
+    for stock in stocks:
+        weights.append(stock["weight"])
+    # fsum telt kommagetallen nauwkeurig op.
+    total_weight = fsum(weights)
 
+    # De tolerantie vangt kleine afrondingsfouten op.
     if abs(total_weight - 1.0) > 1e-8:
         raise ValueError("Portfolio weights must sum to 1")
 
-    expected_return = fsum(
-        stock["weight"] * stock["return"]
-        for stock in stocks
-    )
+    return_contributions = []
+    portfolio_variance = 0
+    for stock in stocks:
+        weight = stock["weight"]
+        stock_return = stock["return"]
+        stock_volatility = stock["volatility"]
+        return_contributions.append(weight * stock_return)
+        # Bij nulcorrelaties vallen de covariantietermen weg.
+        portfolio_variance += (weight * stock_volatility) ** 2
 
-    portfolio_volatility = sqrt(
-        sum(
-            (stock["weight"] * stock["volatility"]) ** 2
-            for stock in stocks
-        )
-    )
+    expected_return = fsum(return_contributions)
+    portfolio_volatility = sqrt(portfolio_variance)
 
     if portfolio_volatility == 0:
         raise ValueError("Portfolio volatility must be positive")
@@ -67,6 +74,11 @@ def calculate_portfolio(stocks, risk_free_rate):
         "volatility": portfolio_volatility,
         "sharpe": sharpe_ratio
     }
+
+
+def sharpe_score(entry):
+    """Geef sorted het veld waarmee het moet sorteren."""
+    return entry["sharpe"]
 
 
 def leaderboard(users):
@@ -87,6 +99,6 @@ def leaderboard(users):
 
     return sorted(
         ranking,
-        key=lambda user: user["sharpe"],
+        key=sharpe_score,
         reverse=True
     )

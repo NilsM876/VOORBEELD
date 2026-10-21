@@ -1,12 +1,12 @@
 [
-  {"username": "Anna", "risk_free_rate": 0.02, "stocks": [
+  {"username": "persoon A", "risk_free_rate": 0.02, "stocks": [
     {"name": "Fictief Alpha", "return": 0.10, "volatility": 0.20, "weight": 0.60},
     {"name": "Fictief Beta", "return": 0.06, "volatility": 0.10, "weight": 0.40}
   ]},
-  {"username": "Bram", "risk_free_rate": 0.02, "stocks": [
+  {"username": "persoon B", "risk_free_rate": 0.02, "stocks": [
     {"name": "Fictief Gamma", "return": 0.08, "volatility": 0.15, "weight": 1.0}
   ]},
-  {"username": "Celine", "risk_free_rate": 0.02, "stocks": [
+  {"username": "persoon C", "risk_free_rate": 0.02, "stocks": [
     {"name": "Fictief Delta", "return": 0.01, "volatility": 0.10, "weight": 1.0}
   ]}
 ]

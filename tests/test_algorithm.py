@@ -49,60 +49,60 @@ class AlgorithmTests(unittest.TestCase):
 
     def test_ranking_and_privacy(self):
         ranking = self.community.leaderboard()
-        self.assertEqual([r["username"] for r in ranking], ["Anna", "Bram", "Celine"])
+        self.assertEqual([r["username"] for r in ranking], ["persoon A", "persoon B", "persoon C"])
         self.assertTrue(all(set(r) == {"username", "sharpe"} for r in ranking))
         self.assertEqual(leaderboard([]), [])
         self.users[1]["stocks"] = self.stocks
-        self.assertEqual([r["username"] for r in leaderboard(self.users)][:2], ["Anna", "Bram"])
+        self.assertEqual([r["username"] for r in leaderboard(self.users)][:2], ["persoon A", "persoon B"])
 
     def test_payment_validation(self):
         for payment in [0, 4.99, 6, float("nan"), float("inf"), True, "5"]:
             with self.subTest(payment=payment), self.assertRaises(ValueError):
-                self.community.unlock_portfolio("Anna", "Bram", payment)
+                self.community.unlock_portfolio("persoon A", "persoon B", payment)
         with self.assertRaises(PermissionError):
-            self.community.get_portfolio("Anna", "Bram")
+            self.community.get_portfolio("persoon A", "persoon B")
 
     def test_access_scoped_to_viewer_and_owner(self):
-        unlocked = self.community.unlock_portfolio("Anna", "Bram", 5)
+        unlocked = self.community.unlock_portfolio("persoon A", "persoon B", 5)
         self.assertEqual(unlocked, self.users[1])
-        self.assertEqual(self.community.unlock_portfolio("Anna", "Bram", 0), unlocked)
-        for viewer, owner in [("Celine", "Bram"), ("Anna", "Celine"), ("Bram", "Anna")]:
+        self.assertEqual(self.community.unlock_portfolio("persoon A", "persoon B", 0), unlocked)
+        for viewer, owner in [("persoon C", "persoon B"), ("persoon A", "persoon C"), ("persoon B", "persoon A")]:
             with self.subTest(viewer=viewer, owner=owner), self.assertRaises(PermissionError):
                 self.community.get_portfolio(viewer, owner)
 
     def test_comments(self):
         with self.assertRaises(PermissionError):
-            self.community.add_comment("Anna", "Bram", "Hallo")
-        self.community.unlock_portfolio("Anna", "Bram", 5)
+            self.community.add_comment("persoon A", "persoon B", "Hallo")
+        self.community.unlock_portfolio("persoon A", "persoon B", 5)
         for message in ["", "  ", None]:
             with self.assertRaises(ValueError):
-                self.community.add_comment("Anna", "Bram", message)
-        self.community.add_comment("Anna", "Bram", "  Interessant!  ")
-        self.assertEqual(self.community.get_comments("Anna", "Bram"),
-                         [{"author": "Anna", "message": "Interessant!"}])
+                self.community.add_comment("persoon A", "persoon B", message)
+        self.community.add_comment("persoon A", "persoon B", "  Interessant!  ")
+        self.assertEqual(self.community.get_comments("persoon A", "persoon B"),
+                         [{"author": "persoon A", "message": "Interessant!"}])
         with self.assertRaises(PermissionError):
-            self.community.add_comment("Celine", "Bram", "Hallo")
+            self.community.add_comment("persoon C", "persoon B", "Hallo")
         with self.assertRaises(PermissionError):
-            self.community.get_comments("Celine", "Bram")
+            self.community.get_comments("persoon C", "persoon B")
 
     def test_ownership_and_user_validation(self):
-        self.assertEqual(self.community.get_portfolio("Anna", "Anna"), self.users[0])
-        for viewer, owner in [("Unknown", "Anna"), ("Anna", "Unknown")]:
+        self.assertEqual(self.community.get_portfolio("persoon A", "persoon A"), self.users[0])
+        for viewer, owner in [("onbekende persoon", "persoon A"), ("persoon A", "onbekende persoon")]:
             with self.assertRaises(ValueError):
                 self.community.unlock_portfolio(viewer, owner, 5)
-        for username in ["Anna", " "]:
+        for username in ["persoon A", " "]:
             with self.assertRaises(ValueError):
                 self.community.add_user(username, self.stocks, 0.02)
 
     def test_defensive_copies(self):
         self.users[0]["stocks"][0]["return"] = 999
-        self.assertEqual(self.community.get_portfolio("Anna", "Anna")["stocks"][0]["return"], 0.1)
-        unlocked = self.community.unlock_portfolio("Anna", "Bram", 5)
+        self.assertEqual(self.community.get_portfolio("persoon A", "persoon A")["stocks"][0]["return"], 0.1)
+        unlocked = self.community.unlock_portfolio("persoon A", "persoon B", 5)
         unlocked["stocks"].clear()
-        self.assertTrue(self.community.get_portfolio("Anna", "Bram")["stocks"])
-        self.community.add_comment("Anna", "Bram", "Hallo")
-        self.community.get_comments("Anna", "Bram").clear()
-        self.assertEqual(len(self.community.get_comments("Anna", "Bram")), 1)
+        self.assertTrue(self.community.get_portfolio("persoon A", "persoon B")["stocks"])
+        self.community.add_comment("persoon A", "persoon B", "Hallo")
+        self.community.get_comments("persoon A", "persoon B").clear()
+        self.assertEqual(len(self.community.get_comments("persoon A", "persoon B")), 1)
 
 
 if __name__ == "__main__":
