@@ -10,10 +10,12 @@ One or two sentences: what it does, and for whom.
 Everyone adds their own line, in their own commit.
 
 | Name | GitHub account | Works on |
+|---|---|---|
 | Nils Matthijs | NilsM876 | website |
 | Alexander Smet | AlexanderSmet | website |
 | Stef Hoegaerts | stefhoegaerts | website | 
-| Brent Vandevyvere | Brenttt-code | website | 
+| Brent Vandevyvere | Brenttt-code | website |
+| Senne Van Vaerenberg | sennevanvae | website |
 
 ## Install and run
 
