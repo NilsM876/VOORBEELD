@@ -1,9 +1,9 @@
-# Name of your application
+# Sharply
 
-One or two sentences: what it does, and for whom.
+Sharply lets you build a stock portfolio, calculates its Sharpe ratio and ranks it on a leaderboard against other users. For anyone who invests.
 
-**Group:** PR2627-?  
-**Client:** name and organisation, or "none, we test with" and who you test with
+**Group:** PR2627-25  
+**Client:** none, we test with fellow students
 
 ## Team
 
