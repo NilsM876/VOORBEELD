@@ -1,0 +1,109 @@
+import json
+import math
+from pathlib import Path
+import unittest
+
+from algorithm import PortfolioCommunity, calculate_portfolio, leaderboard
+from algorithm import portfolio
+
+
+class AlgorithmTests(unittest.TestCase):
+    def test_public_api_reexports_portfolio_functions(self):
+        self.assertIs(calculate_portfolio, portfolio.calculate_portfolio)
+        self.assertIs(leaderboard, portfolio.leaderboard)
+
+    def setUp(self):
+        self.users = json.loads((Path(__file__).resolve().parents[1] / "test_data.json").read_text())
+        self.stocks = self.users[0]["stocks"]
+        self.community = PortfolioCommunity(self.users)
+
+    def test_known_calculation(self):
+        result = calculate_portfolio(self.stocks, 0.02)
+        self.assertAlmostEqual(result["return"], 0.084)
+        self.assertAlmostEqual(result["volatility"], math.sqrt(0.016))
+        self.assertAlmostEqual(result["sharpe"], 0.064 / math.sqrt(0.016))
+
+    def test_single_stock_negative_and_zero_sharpe(self):
+        stocks = self.users[2]["stocks"]
+        self.assertAlmostEqual(calculate_portfolio(stocks, 0.02)["sharpe"], -0.1)
+        self.assertEqual(calculate_portfolio(stocks, 0.01)["sharpe"], 0)
+
+    def test_invalid_stock_inputs(self):
+        for key, value in [("weight", -1), ("weight", 0.2), ("volatility", -0.1),
+                           ("return", float("nan")), ("weight", float("inf")),
+                           ("return", True), ("volatility", "0.2"), ("name", " ")]:
+            with self.subTest(key=key, value=value):
+                stocks = [dict(stock) for stock in self.stocks]
+                stocks[0][key] = value
+                with self.assertRaises(ValueError):
+                    calculate_portfolio(stocks, 0.02)
+
+    def test_invalid_rate_empty_and_zero_volatility(self):
+        for rate in [float("nan"), float("inf"), None, True]:
+            with self.subTest(rate=rate), self.assertRaises(ValueError):
+                calculate_portfolio(self.stocks, rate)
+        with self.assertRaises(ValueError):
+            calculate_portfolio([], 0.02)
+        with self.assertRaises(ValueError):
+            calculate_portfolio([{"name": "A", "return": 0.1, "volatility": 0, "weight": 1}], 0)
+
+    def test_ranking_and_privacy(self):
+        ranking = self.community.leaderboard()
+        self.assertEqual([r["username"] for r in ranking], ["Anna", "Bram", "Celine"])
+        self.assertTrue(all(set(r) == {"username", "sharpe"} for r in ranking))
+        self.assertEqual(leaderboard([]), [])
+        self.users[1]["stocks"] = self.stocks
+        self.assertEqual([r["username"] for r in leaderboard(self.users)][:2], ["Anna", "Bram"])
+
+    def test_payment_validation(self):
+        for payment in [0, 4.99, 6, float("nan"), float("inf"), True, "5"]:
+            with self.subTest(payment=payment), self.assertRaises(ValueError):
+                self.community.unlock_portfolio("Anna", "Bram", payment)
+        with self.assertRaises(PermissionError):
+            self.community.get_portfolio("Anna", "Bram")
+
+    def test_access_scoped_to_viewer_and_owner(self):
+        unlocked = self.community.unlock_portfolio("Anna", "Bram", 5)
+        self.assertEqual(unlocked, self.users[1])
+        self.assertEqual(self.community.unlock_portfolio("Anna", "Bram", 0), unlocked)
+        for viewer, owner in [("Celine", "Bram"), ("Anna", "Celine"), ("Bram", "Anna")]:
+            with self.subTest(viewer=viewer, owner=owner), self.assertRaises(PermissionError):
+                self.community.get_portfolio(viewer, owner)
+
+    def test_comments(self):
+        with self.assertRaises(PermissionError):
+            self.community.add_comment("Anna", "Bram", "Hallo")
+        self.community.unlock_portfolio("Anna", "Bram", 5)
+        for message in ["", "  ", None]:
+            with self.assertRaises(ValueError):
+                self.community.add_comment("Anna", "Bram", message)
+        self.community.add_comment("Anna", "Bram", "  Interessant!  ")
+        self.assertEqual(self.community.get_comments("Anna", "Bram"),
+                         [{"author": "Anna", "message": "Interessant!"}])
+        with self.assertRaises(PermissionError):
+            self.community.add_comment("Celine", "Bram", "Hallo")
+        with self.assertRaises(PermissionError):
+            self.community.get_comments("Celine", "Bram")
+
+    def test_ownership_and_user_validation(self):
+        self.assertEqual(self.community.get_portfolio("Anna", "Anna"), self.users[0])
+        for viewer, owner in [("Unknown", "Anna"), ("Anna", "Unknown")]:
+            with self.assertRaises(ValueError):
+                self.community.unlock_portfolio(viewer, owner, 5)
+        for username in ["Anna", " "]:
+            with self.assertRaises(ValueError):
+                self.community.add_user(username, self.stocks, 0.02)
+
+    def test_defensive_copies(self):
+        self.users[0]["stocks"][0]["return"] = 999
+        self.assertEqual(self.community.get_portfolio("Anna", "Anna")["stocks"][0]["return"], 0.1)
+        unlocked = self.community.unlock_portfolio("Anna", "Bram", 5)
+        unlocked["stocks"].clear()
+        self.assertTrue(self.community.get_portfolio("Anna", "Bram")["stocks"])
+        self.community.add_comment("Anna", "Bram", "Hallo")
+        self.community.get_comments("Anna", "Bram").clear()
+        self.assertEqual(len(self.community.get_comments("Anna", "Bram")), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()
