@@ -27,5 +27,9 @@ class Config:
         f"@{_required('DB_HOST')}/{_required('DB_NAME')}"
     )
 
+    # De databaseserver verbreekt verbindingen die een tijd niets doen.
+    # pool_recycle vervangt een verbinding na 4 minuten; pool_pre_ping test ze voor gebruik.
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_recycle": 240, "pool_pre_ping": True}
+
     # 1 in .env prints every query in your terminal
     SQLALCHEMY_ECHO = os.environ.get("SQLALCHEMY_ECHO", "0") == "1"
