@@ -28,9 +28,9 @@ function changed() {
       if (controller.signal.aborted) return;
       const content = response.ok ? page.querySelector('#result') : page.querySelector('[role="alert"]');
       if (content) result.replaceChildren(...(response.ok ? [...content.childNodes] : [content]));
-      else result.textContent = 'Berekenen mislukt. Probeer de knop Berekenen.';
+      else result.textContent = 'Berekenen mislukt. Probeer de knop Portefeuille-overzicht berekenen.';
     } catch (error) {
-      if (error.name !== 'AbortError') result.textContent = 'Automatisch berekenen mislukt. Probeer de knop Berekenen.';
+      if (error.name !== 'AbortError') result.textContent = 'Automatisch berekenen mislukt. Probeer de knop Portefeuille-overzicht berekenen.';
     }
   }, 350);
 }

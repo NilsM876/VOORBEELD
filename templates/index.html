@@ -21,7 +21,7 @@
   <button type="button" id="add-stock" class="btn btn-secondary">Aandeel toevoegen</button>
   <p id="amount-total" aria-live="polite"></p>
   <label>Risk-free rate voor de volledige portefeuille (%) <input class="form-control" type="number" step="any" name="risk_free_rate" value="{{ rate }}" required></label>
-  <button class="btn btn-primary" name="action" value="calculate">Berekenen</button>
+  <p class="mt-4"><button class="btn btn-primary" name="action" value="calculate">Portefeuille-overzicht berekenen</button></p>
   <p class="mt-3"><label>Unieke gebruikersnaam voor publicatie <input class="form-control" name="username" value="{{ username }}"></label>
   <button class="btn btn-outline-primary" name="action" value="publish">Berekenen en publiceren</button></p>
 </form>
@@ -47,20 +47,20 @@
 <table class="table"><thead><tr><th>Gebruiker</th><th>Sharpe ratio</th><th>Portefeuille</th></tr></thead><tbody>
 {% for entry in ranking %}
 <tr><td>{{ entry.username }}</td><td>{{ '%.4f'|format(entry.sharpe) }}</td><td>
-<form method="post"><input type="hidden" name="owner" value="{{ entry.username }}"><button class="btn btn-outline-secondary" name="action" value="unlock">{% if viewer == entry.username %}Eigen portefeuille bekijken{% else %}Ontgrendelen — €5 (simulatie){% endif %}</button></form>
+<form method="post" action="#opened-portfolio"><input type="hidden" name="owner" value="{{ entry.username }}"><button class="btn btn-outline-secondary" name="action" value="unlock">{% if viewer == entry.username %}Eigen portefeuille bekijken{% else %}Ontgrendelen — €5 (simulatie){% endif %}</button></form>
 </td></tr>
 {% endfor %}
 </tbody></table>
 <p>Er wordt geen echt geld aangerekend. Een ontgrendelde portefeuille opnieuw bekijken is gratis.</p>
 {% if opened %}
-<h2>Portefeuille van {{ opened.username }}</h2>
+<h2 id="opened-portfolio">Portefeuille van {{ opened.username }}</h2>
 <p>Risk-free rate: {{ '%.2f'|format(opened.risk_free_rate * 100) }}%</p>
 <table class="table"><thead><tr><th>Aandeel</th><th>Rendement (%)</th><th>Standaarddeviatie (%)</th><th>Gewicht (%)</th></tr></thead><tbody>
 {% for stock in opened.stocks %}<tr><td>{{ stock.name }}</td><td>{{ '%.2f'|format(stock['return'] * 100) }}</td><td>{{ '%.2f'|format(stock.volatility * 100) }}</td><td>{{ '%.2f'|format(stock.weight * 100) }}</td></tr>{% endfor %}
 </tbody></table>
 <h3>Commentaar</h3>
 {% for comment in comments %}<p><strong>{{ comment.author }}</strong>: {{ comment.message }}</p>{% endfor %}
-{% if viewer != opened.username %}<form method="post"><input type="hidden" name="owner" value="{{ opened.username }}"><label>Commentaar <textarea class="form-control" name="message" required></textarea></label><button class="btn btn-primary" name="action" value="comment">Plaatsen</button></form>{% endif %}
+{% if viewer != opened.username %}<form method="post" action="#opened-portfolio"><input type="hidden" name="owner" value="{{ opened.username }}"><label>Commentaar <textarea class="form-control" name="message" required></textarea></label><button class="btn btn-primary" name="action" value="comment">Plaatsen</button></form>{% endif %}
 {% endif %}
 <script src="{{ url_for('static', filename='js/portfolio.js') }}" defer></script>
 {% endblock %}
