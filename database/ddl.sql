@@ -41,19 +41,12 @@ CREATE TABLE Subscription (
     FOREIGN KEY (user_id) REFERENCES `User` (user_id)
 );
 
--- Eén slotkoers per aandeel per dag.
-CREATE TABLE AssetPrice (
-    asset_id        INT            NOT NULL,
-    price_date      DATE           NOT NULL,
-    adjusted_close  DECIMAL(18, 6) NOT NULL,
-    PRIMARY KEY (asset_id, price_date),
-    FOREIGN KEY (asset_id) REFERENCES Asset (asset_id)
-);
-
--- Eén rij per aandeel in een portefeuille.
+-- Eén rij per aandeel in een portefeuille. De gebruiker geeft de koers zelf in;
+-- er wordt geen koersgeschiedenis bijgehouden.
 CREATE TABLE PortfolioHolding (
     portfolio_id      INT            NOT NULL,
     asset_id          INT            NOT NULL,
+    price             DECIMAL(18, 6) NOT NULL,
     input_weight      DECIMAL(10, 8),
     optimized_weight  DECIMAL(10, 8),
     PRIMARY KEY (portfolio_id, asset_id),
