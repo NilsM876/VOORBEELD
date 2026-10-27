@@ -212,4 +212,5 @@ def home():
         "index.html", rows=rows, rate=rate, username=username, stocks=stocks,
         total_amount=total_amount, result=result, optimal=optimal, optimal_error=optimal_error,
         error=error, limitation=CORRELATION_LIMITATION, ranking=get_leaderboard(),
+        viewer=session.get("username"),
     ), status

@@ -1,51 +1,64 @@
 {% extends "base.html" %}
 {% block title %}Portefeuille van {{ owner.username }}{% endblock %}
 {% block content %}
-<h1>Portefeuille van {{ owner.username }}</h1>
-<p>Sharpe ratio: {{ '%.4f'|format(analysis.sharpe_ratio) }}</p>
+<section class="glass-card">
+  <h1 class="section-title"><span class="avatar">{{ owner.username[:1]|upper }}</span> Portefeuille van {{ owner.username }}</h1>
+  <div class="stat-grid">
+    <div class="stat stat-hero">
+      <span class="stat-label">Sharpe ratio</span>
+      <span class="stat-value text-gradient">{{ '%.4f'|format(analysis.sharpe_ratio) }}</span>
+    </div>
+  </div>
 
 {% if not access %}
   {# De paywall: zonder ontgrendeling zie je alleen de Sharpe ratio. #}
-  <div class="border rounded p-3">
+  <div class="publish-box">
     <p>De volledige portefeuille zie je na een betaling van €{{ price }}. Dit is een simulatie: er wordt geen echt geld aangerekend.</p>
     {% if user %}
       <form method="post" action="{{ url_for('community.unlock', portfolio_id=portfolio.portfolio_id) }}">
-        <button class="btn btn-primary">Ontgrendelen voor €{{ price }}</button>
+        <button class="btn btn-unlock">🔒 Ontgrendelen voor €{{ price }}</button>
       </form>
     {% else %}
-      <p>Publiceer eerst je eigen portefeuille op de <a href="{{ url_for('main.home') }}">startpagina</a>, daarna kun je andere portefeuilles ontgrendelen.</p>
+      <p class="muted mb-0">Publiceer eerst je eigen portefeuille op de <a href="{{ url_for('main.home') }}#calculator">startpagina</a>, daarna kun je andere portefeuilles ontgrendelen.</p>
     {% endif %}
   </div>
 {% else %}
-  <p>Verwacht rendement: {{ '%.2f'|format(analysis.annual_return * 100) }}% &middot;
-     Volatiliteit: {{ '%.2f'|format(analysis.annual_volatility * 100) }}% &middot;
-     Risk-free rate: {{ '%.2f'|format(analysis.risk_free_rate * 100) }}%</p>
-  <table class="table">
-    <thead><tr><th>Aandeel</th><th>Rendement (%)</th><th>Standaarddeviatie (%)</th><th>Bedrag (€)</th><th>Gewicht (%)</th></tr></thead>
-    <tbody>
-    {% for stock in stocks %}
-      <tr>
-        <td>{{ stock.name }}</td>
-        <td>{{ '%.2f'|format(stock['return'] * 100) }}</td>
-        <td>{{ '%.2f'|format(stock.volatility * 100) }}</td>
-        <td>{{ '%.2f'|format(stock.amount) }}</td>
-        <td>{{ '%.2f'|format(stock.weight * 100) }}</td>
-      </tr>
-    {% endfor %}
-    </tbody>
-  </table>
+  <p class="muted mt-3">
+    Verwacht rendement: <span class="mono">{{ '%.2f'|format(analysis.annual_return * 100) }}%</span> &middot;
+    Volatiliteit: <span class="mono">{{ '%.2f'|format(analysis.annual_volatility * 100) }}%</span> &middot;
+    Risk-free rate: <span class="mono">{{ '%.2f'|format(analysis.risk_free_rate * 100) }}%</span>
+  </p>
+  <div class="table-wrap">
+    <table class="table table-slick">
+      <thead><tr><th>Aandeel</th><th>Rendement (%)</th><th>Standaarddeviatie (%)</th><th>Bedrag (€)</th><th>Gewicht (%)</th></tr></thead>
+      <tbody>
+      {% for stock in stocks %}
+        <tr>
+          <td class="fw-semibold">{{ stock.name }}</td>
+          <td class="mono">{{ '%.2f'|format(stock['return'] * 100) }}</td>
+          <td class="mono">{{ '%.2f'|format(stock.volatility * 100) }}</td>
+          <td class="mono">{{ '%.2f'|format(stock.amount) }}</td>
+          <td><span class="mono">{{ '%.2f'|format(stock.weight * 100) }}</span><span class="bar"><span style="width: {{ (stock.weight * 100)|round(1) }}%"></span></span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
-  <h2>Commentaar</h2>
+  <h2 class="section-title small-title mt-4">💬 Commentaar</h2>
+  <div class="comments">
   {% for comment in comments %}
-    <p><strong>{{ comment.author }}</strong>: {{ comment.content }}</p>
+    <div class="comment"><span class="avatar avatar-sm">{{ comment.author[:1]|upper }}</span><div class="bubble"><strong>{{ comment.author }}</strong>: {{ comment.content }}</div></div>
   {% else %}
-    <p>Nog geen commentaar.</p>
+    <p class="muted">Nog geen commentaar. Wees de eerste!</p>
   {% endfor %}
-  <form method="post" action="{{ url_for('community.comment', portfolio_id=portfolio.portfolio_id) }}">
-    <label class="w-100">Jouw commentaar <textarea class="form-control" name="content" required></textarea></label>
-    <button class="btn btn-primary mt-2">Plaatsen</button>
+  </div>
+  <form method="post" action="{{ url_for('community.comment', portfolio_id=portfolio.portfolio_id) }}" class="comment-form">
+    <label class="field"><span>Jouw commentaar</span><textarea class="form-control" name="content" rows="3" placeholder="Wat vind je van deze portefeuille?" required></textarea></label>
+    <button class="btn btn-glow mt-2">Plaatsen</button>
   </form>
 {% endif %}
+</section>
 
-<p class="mt-4"><a href="{{ url_for('main.home') }}">Terug naar het leaderboard</a></p>
+<p class="mt-4"><a class="btn btn-ghost" href="{{ url_for('main.home') }}#leaderboard">← Terug naar het leaderboard</a></p>
 {% endblock %}
