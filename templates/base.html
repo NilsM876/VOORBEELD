@@ -1,21 +1,23 @@
 <!doctype html>
-<html lang="en">
+<html lang="nl">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Our MVP{% endblock %}</title>
+  <title>{% block title %}Sharply{% endblock %} · Sharply</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
 </head>
 <body>
-  <nav class="navbar navbar-expand bg-body-tertiary mb-4">
+  <nav class="navbar navbar-expand navbar-dark sharply-nav">
     <div class="container">
-      <a class="navbar-brand" href="{{ url_for('main.home') }}">Our MVP</a>
-      {# your menu: one <a class="nav-link"> per page #}
+      <a class="navbar-brand sharply-brand" href="{{ url_for('main.home') }}">
+        <span class="sharply-logo">S</span> Sharply
+      </a>
+      <span class="navbar-text d-none d-md-inline">Slimmer beleggen met de Sharpe ratio</span>
     </div>
   </nav>
 
-  <main class="container">
+  <main class="container py-4">
     {% with messages = get_flashed_messages() %}
       {% for message in messages %}
         <div class="alert alert-info">{{ message }}</div>
@@ -24,5 +26,9 @@
 
     {% block content %}{% endblock %}
   </main>
+
+  <footer class="sharply-footer">
+    <div class="container">Sharply · Groep PR2627-25 · Een schoolproject, geen financieel advies.</div>
+  </footer>
 </body>
 </html>
