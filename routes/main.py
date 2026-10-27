@@ -28,11 +28,12 @@ def home():
     optimal = None
     optimal_error = None
     stocks = []
+    total_amount = 0
     error = None
     opened = None
     comments = []
     owner = request.form.get("owner", "")
-    rows = [{"name": "", "return": "", "volatility": "", "weight": ""}]
+    rows = [{"name": "", "return": "", "volatility": "", "amount": ""}]
     rate = request.form.get("risk_free_rate", "2")
     username = request.form.get("username", "")
     # De sessie onthoudt de actieve naam voor deze browser. Dit is geen login.
@@ -44,7 +45,7 @@ def home():
             if action in ("calculate", "publish"):
                 # HTML herhaalt dezelfde veldnamen voor elke aandelenrij.
                 # getlist haalt alle waarden van één veldnaam in rijvolgorde op.
-                field_names = ("name", "return", "volatility", "weight")
+                field_names = ("name", "return", "volatility", "amount")
                 fields = {}
                 for field_name in field_names:
                     fields[field_name] = request.form.getlist(field_name)
@@ -64,12 +65,22 @@ def home():
                 # rows bewaart tekst voor het formulier; stocks bevat getallen.
                 # De gebruiker voert 10 in voor 10%; de berekening gebruikt 0.10.
                 stocks = []
+                amounts = []
                 for row in rows:
                     stock = {"name": row["name"].strip()}
-                    for field_name in ("return", "volatility", "weight"):
+                    for field_name in ("return", "volatility"):
                         text = row[field_name].replace(",", ".")
                         stock[field_name] = float(text) / 100
                     stocks.append(stock)
+                    amounts.append(float(row["amount"].replace(",", ".")))
+
+                # De gebruiker voert bedragen in euro in; de berekening gebruikt gewichten.
+                # Gewicht = bedrag van het aandeel / totaal bedrag, bv. 600 / 1000 = 0.60.
+                total_amount = sum(amounts)
+                if total_amount <= 0:
+                    raise ValueError("Het totale bedrag moet groter dan 0 zijn")
+                for index in range(len(stocks)):
+                    stocks[index]["weight"] = amounts[index] / total_amount
                 risk_free_rate = float(rate.replace(",", ".")) / 100
                 result = calculate_portfolio(stocks, risk_free_rate)
                 # Lukt de optimale weging niet, dan tonen we toch het gewone resultaat.
@@ -94,10 +105,10 @@ def home():
             else:
                 raise ValueError("Onbekende actie.")
         except (ValueError, PermissionError, OverflowError) as exc:
-            error = f"Controleer je invoer: {exc}. Gewichten moeten samen 100% zijn; gebruik geldige getallen en een positieve portefeuillevolatiliteit."
+            error = f"Controleer je invoer: {exc}. Bedragen mogen niet negatief zijn; gebruik geldige getallen en een positieve portefeuillevolatiliteit."
             status = 400
     return render_template("index.html", rows=rows, rate=rate, username=username,
                            result=result, optimal=optimal, optimal_error=optimal_error,
-                           stocks=stocks, error=error, limitation=CORRELATION_LIMITATION,
+                           stocks=stocks, total_amount=total_amount, error=error, limitation=CORRELATION_LIMITATION,
                            ranking=community.leaderboard(), viewer=viewer,
                            opened=opened, comments=comments), status

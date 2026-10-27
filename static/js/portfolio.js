@@ -3,11 +3,11 @@ const stocks = document.querySelector('#stocks');
 const prototype = stocks.firstElementChild.cloneNode(true);
 let timer;
 let pending;
-function updateWeights() {
-  const weights = [...stocks.querySelectorAll('[name="weight"]')];
-  const total = weights.reduce((sum, input) => sum + Number(input.value), 0);
-  const valid = weights.length > 0 && Math.abs(total - 100) <= 0.000001;
-  document.querySelector('#weight-total').textContent = `Totaal gewicht: ${total.toFixed(2)}%${valid ? '' : ' — moet 100% zijn'}`;
+function updateTotal() {
+  const amounts = [...stocks.querySelectorAll('[name="amount"]')];
+  const total = amounts.reduce((sum, input) => sum + Number(input.value), 0);
+  const valid = amounts.length > 0 && total > 0;
+  document.querySelector('#amount-total').textContent = `Totaal bedrag: €${total.toFixed(2)}${valid ? '' : ' — moet groter dan 0 zijn'}`;
   form.querySelectorAll('button[name="action"]').forEach(button => button.disabled = !valid);
   return valid;
 }
@@ -16,7 +16,7 @@ function changed() {
   if (pending) pending.abort();
   const result = document.querySelector('#result');
   result.replaceChildren();
-  if (!updateWeights() || !form.checkValidity()) return;
+  if (!updateTotal() || !form.checkValidity()) return;
   timer = setTimeout(async () => {
     const controller = new AbortController();
     pending = controller;
@@ -52,4 +52,4 @@ form.addEventListener('submit', () => {
   clearTimeout(timer);
   if (pending) pending.abort();
 });
-updateWeights();
+updateTotal();

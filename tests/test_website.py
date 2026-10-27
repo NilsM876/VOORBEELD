@@ -14,8 +14,8 @@ class WebsiteTests(unittest.TestCase):
         self.app.register_blueprint(bp)
         self.client = self.app.test_client()
         self.data = MultiDict([
-            ("name", "A"), ("return", "10"), ("volatility", "20"), ("weight", "60"),
-            ("name", "B"), ("return", "6"), ("volatility", "10"), ("weight", "40"),
+            ("name", "A"), ("return", "10"), ("volatility", "20"), ("amount", "600"),
+            ("name", "B"), ("return", "6"), ("volatility", "10"), ("amount", "400"),
             ("risk_free_rate", "2"), ("username", "persoon D"), ("action", "calculate"),
         ])
 
@@ -25,11 +25,11 @@ class WebsiteTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         text = response.get_data(as_text=True)
         for expected in ("8.40%", "12.65%", "0.5060", "als nul verondersteld",
-                         "Optimale weging", "33.33", "66.67"):
+                         "Optimale weging", "33.33", "66.67", "333.33"):
             self.assertIn(expected, text)
 
     def test_invalid_input(self):
-        for field, value in [("weight", "30"), ("volatility", "-1"),
+        for field, value in [("amount", "0"), ("amount", "-1"), ("volatility", "-1"),
                              ("return", "nan"), ("risk_free_rate", "inf"), ("name", "")]:
             with self.subTest(field=field):
                 data = self.data.copy()

@@ -7,7 +7,8 @@
 3. `templates/index.html` toont het formulier. HTML beschrijft de pagina;
    Jinja vult waarden in tussen `{{ ... }}` en verwerkt `{% ... %}`.
 4. Bij verzenden komen de velden binnen via `request.form`.
-5. De route zet tekst en percentages om naar getallen en fracties.
+5. De route zet tekst en percentages om naar getallen en fracties, en
+   bedragen in euro om naar gewichten (bedrag / totaal bedrag).
 6. `algorithm/portfolio.py` controleert de invoer en berekent de resultaten.
 7. `render_template()` geeft het resultaat aan de HTML-pagina.
 
@@ -142,7 +143,7 @@ De databasebestanden bevatten nog geen uitgewerkt gegevensmodel.
 ## 8. JavaScript en de andere bestanden
 
 `static/js/portfolio.js` voegt aandelenrijen toe, verwijdert rijen en telt
-gewichten op. Bij geldige invoer wacht het script 350 milliseconden voordat het
+de bedragen op. Bij geldige invoer wacht het script 350 milliseconden voordat het
 de berekening aanvraagt. Zo volgt niet bij elke toetsaanslag onmiddellijk een
 verzoek. `fetch()` verstuurt het formulier zonder de hele pagina te verversen.
 `async/await` wacht op het antwoord; `AbortController` annuleert een vorige

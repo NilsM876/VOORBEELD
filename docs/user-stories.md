@@ -8,11 +8,12 @@ Most important first.
 ## Must have
 
 ### 1. Portefeuille invoeren
-Als belegger wil ik aandelen (tickers) en mijn bedrag of aantal per aandeel invoeren, zodat mijn portefeuille in de applicatie staat.
+Als belegger wil ik aandelen (tickers) met hun verwacht rendement, volatiliteit en mijn bedrag in euro per aandeel invoeren, zodat mijn portefeuille in de applicatie staat.
 
 Acceptance criteria:
-- Ik kan meerdere aandelen toevoegen en verwijderen, elk met een ticker en een bedrag of aantal.
-- Lege of ongeldige invoer wordt geweigerd met een duidelijke foutmelding.
+- Ik kan meerdere aandelen toevoegen en verwijderen, elk met een ticker, een verwacht rendement, een volatiliteit en een bedrag in euro.
+- De app rekent de bedragen zelf om naar gewichten, bijvoorbeeld €600 van €1000 is 60%.
+- Lege of ongeldige invoer, een negatief bedrag of een totaal bedrag van 0 wordt geweigerd met een duidelijke foutmelding.
 
 ### 2. Rendement en volatiliteit zien
 Als belegger wil ik het gemiddelde rendement en de volatiliteit van mijn portefeuille zien, zodat ik begrijp hoeveel risico ik loop voor mijn rendement.
