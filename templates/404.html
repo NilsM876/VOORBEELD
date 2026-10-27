@@ -1,9 +1,12 @@
 {% extends "base.html" %}
 
-{% block title %}Not found{% endblock %}
+{% block title %}Niet gevonden{% endblock %}
 
 {% block content %}
-  <h1>This page does not exist</h1>
-  <p>The link is wrong, or what it pointed to has been removed.</p>
-  <p><a href="{{ url_for('main.home') }}">Back to the start page</a></p>
+  <section class="hero text-center">
+    <p class="huge-404 text-gradient">404</p>
+    <h1>Deze pagina bestaat niet</h1>
+    <p class="hero-lead mx-auto">De link is fout, of wat hij aanwees is verwijderd. Zelfs de beste portefeuille heeft eens een dip.</p>
+    <p><a class="btn btn-glow btn-lg" href="{{ url_for('main.home') }}">Terug naar de startpagina</a></p>
+  </section>
 {% endblock %}
