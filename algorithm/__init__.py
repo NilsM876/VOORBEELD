@@ -5,6 +5,7 @@ from .portfolio import (
     calculate_portfolio,
     finite_number,
     leaderboard,
+    optimal_weights,
 )
 from .community import PortfolioCommunity
 
@@ -13,5 +14,6 @@ __all__ = [
     "calculate_portfolio",
     "finite_number",
     "leaderboard",
+    "optimal_weights",
     "PortfolioCommunity",
 ]

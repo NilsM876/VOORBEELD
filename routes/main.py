@@ -4,7 +4,7 @@ from pathlib import Path
 
 from flask import Blueprint, current_app, render_template, request, session
 
-from algorithm import CORRELATION_LIMITATION, PortfolioCommunity, calculate_portfolio
+from algorithm import CORRELATION_LIMITATION, PortfolioCommunity, calculate_portfolio, optimal_weights
 
 # Een Blueprint groepeert routes. app.py koppelt deze groep aan Flask.
 bp = Blueprint("main", __name__)
@@ -25,6 +25,9 @@ def get_community():
 def home():
     community = get_community()
     result = None
+    optimal = None
+    optimal_error = None
+    stocks = []
     error = None
     opened = None
     comments = []
@@ -69,6 +72,11 @@ def home():
                     stocks.append(stock)
                 risk_free_rate = float(rate.replace(",", ".")) / 100
                 result = calculate_portfolio(stocks, risk_free_rate)
+                # Lukt de optimale weging niet, dan tonen we toch het gewone resultaat.
+                try:
+                    optimal = optimal_weights(stocks, risk_free_rate)
+                except ValueError as exc:
+                    optimal_error = str(exc)
                 if action == "publish":
                     community.add_user(username, stocks, risk_free_rate)
                     session["portfolio_viewer"] = username.strip()
@@ -89,6 +97,7 @@ def home():
             error = f"Controleer je invoer: {exc}. Gewichten moeten samen 100% zijn; gebruik geldige getallen en een positieve portefeuillevolatiliteit."
             status = 400
     return render_template("index.html", rows=rows, rate=rate, username=username,
-                           result=result, error=error, limitation=CORRELATION_LIMITATION,
+                           result=result, optimal=optimal, optimal_error=optimal_error,
+                           stocks=stocks, error=error, limitation=CORRELATION_LIMITATION,
                            ranking=community.leaderboard(), viewer=viewer,
                            opened=opened, comments=comments), status

@@ -24,7 +24,8 @@ class WebsiteTests(unittest.TestCase):
         response = self.client.post("/", data=self.data)
         self.assertEqual(response.status_code, 200)
         text = response.get_data(as_text=True)
-        for expected in ("8.40%", "12.65%", "0.5060", "als nul verondersteld"):
+        for expected in ("8.40%", "12.65%", "0.5060", "als nul verondersteld",
+                         "Optimale weging", "33.33", "66.67"):
             self.assertIn(expected, text)
 
     def test_invalid_input(self):

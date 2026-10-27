@@ -31,6 +31,15 @@
 <p>Verwacht portefeuillerendement: {{ '%.2f'|format(result['return'] * 100) }}%</p>
 <p>Portefeuillevolatiliteit: {{ '%.2f'|format(result.volatility * 100) }}%</p>
 <p>Sharpe ratio: {{ '%.4f'|format(result.sharpe) }}</p>
+<h3>Optimale weging</h3>
+{% if optimal %}
+<table class="table"><thead><tr><th>Aandeel</th><th>Jouw gewicht (%)</th><th>Optimaal gewicht (%)</th></tr></thead><tbody>
+{% for stock in optimal.stocks %}<tr><td>{{ stock.name }}</td><td>{{ '%.2f'|format(stocks[loop.index0].weight * 100) }}</td><td>{{ '%.2f'|format(stock.weight * 100) }}</td></tr>{% endfor %}
+<tr><th>Sharpe ratio</th><th>{{ '%.4f'|format(result.sharpe) }}</th><th>{{ '%.4f'|format(optimal.sharpe) }}</th></tr>
+</tbody></table>
+{% else %}
+<p class="alert alert-info">Geen optimale weging mogelijk: {{ optimal_error }}.</p>
+{% endif %}
 {% endif %}
 </section>
 <h2>Leaderboard</h2>

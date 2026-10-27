@@ -3,7 +3,7 @@ import math
 from pathlib import Path
 import unittest
 
-from algorithm import PortfolioCommunity, calculate_portfolio, leaderboard
+from algorithm import PortfolioCommunity, calculate_portfolio, leaderboard, optimal_weights
 from algorithm import portfolio
 
 
@@ -46,6 +46,26 @@ class AlgorithmTests(unittest.TestCase):
             calculate_portfolio([], 0.02)
         with self.assertRaises(ValueError):
             calculate_portfolio([{"name": "A", "return": 0.1, "volatility": 0, "weight": 1}], 0)
+
+    def test_optimal_weights(self):
+        # Scores: A = 0.08 / 0.04 = 2, B = 0.04 / 0.01 = 4, dus 1/3 en 2/3.
+        optimal = optimal_weights(self.stocks, 0.02)
+        self.assertAlmostEqual(optimal["stocks"][0]["weight"], 1 / 3)
+        self.assertAlmostEqual(optimal["stocks"][1]["weight"], 2 / 3)
+        self.assertGreater(optimal["sharpe"], calculate_portfolio(self.stocks, 0.02)["sharpe"])
+
+    def test_optimal_weights_skips_stocks_below_risk_free_rate(self):
+        stocks = self.stocks + [{"name": "C", "return": 0.01, "volatility": 0, "weight": 0}]
+        optimal = optimal_weights(stocks, 0.02)
+        self.assertEqual(optimal["stocks"][2]["weight"], 0)
+
+    def test_optimal_weights_errors(self):
+        no_risk = [{"name": "A", "return": 0.10, "volatility": 0, "weight": 1}]
+        with self.assertRaises(ValueError):
+            optimal_weights(no_risk, 0.02)
+        too_low = [{"name": "A", "return": 0.01, "volatility": 0.10, "weight": 1}]
+        with self.assertRaises(ValueError):
+            optimal_weights(too_low, 0.02)
 
     def test_ranking_and_privacy(self):
         ranking = self.community.leaderboard()
