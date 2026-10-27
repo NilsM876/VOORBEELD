@@ -1,4 +1,13 @@
-﻿from math import fsum, isfinite, sqrt
+﻿"""De berekeningen van Sharply, in gewone Python zonder Flask.
+
+Een aandeel is een dictionary, een portefeuille een lijst van aandelen:
+
+    {"name": "A", "return": 0.10, "volatility": 0.20, "weight": 0.60}
+
+Alle percentages zijn fracties: 0.10 betekent 10%.
+"""
+
+from math import isfinite, sqrt
 
 
 CORRELATION_LIMITATION = (
@@ -8,72 +17,67 @@ CORRELATION_LIMITATION = (
 )
 
 
-def finite_number(value, label):
-    """Weiger invoer die geen bruikbaar getal is."""
-    # Python behandelt True en False als getallen; hier aanvaarden we die niet.
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ValueError(f"{label} must be a finite number")
-    try:
-        valid = isfinite(value)
-    except OverflowError:
-        valid = False
-    if not valid:
-        raise ValueError(f"{label} must be a finite number")
-    return value
+def check_number(value, label):
+    """Geef een fout als value geen gewoon, eindig getal is."""
+    # True en False tellen in Python als 1 en 0; die weigeren we.
+    # isfinite weigert "oneindig" en "nan" (not a number).
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not isfinite(value):
+        raise ValueError(f"{label} moet een geldig getal zijn")
+
+
+def amounts_to_weights(stocks):
+    """Voeg aan elk aandeel een gewicht toe: zijn bedrag gedeeld door het totaal."""
+    total_amount = 0
+    for stock in stocks:
+        check_number(stock["amount"], "Het bedrag")
+        if stock["amount"] < 0:
+            raise ValueError("Een bedrag mag niet negatief zijn")
+        total_amount += stock["amount"]
+
+    if total_amount <= 0:
+        raise ValueError("Het totale bedrag moet groter dan 0 zijn")
+
+    for stock in stocks:
+        # Voorbeeld: 600 euro van 1000 euro geeft gewicht 0.60.
+        stock["weight"] = stock["amount"] / total_amount
+    return total_amount
 
 
 def calculate_portfolio(stocks, risk_free_rate):
-    """Bereken rendement, risico en Sharpe bij veronderstelde nulcorrelaties."""
+    """Bereken rendement, volatiliteit en Sharpe ratio van een portefeuille."""
+    check_number(risk_free_rate, "De risk-free rate")
+    if len(stocks) == 0:
+        raise ValueError("Voeg minstens één aandeel toe")
 
-    if not stocks:
-        raise ValueError("Portfolio cannot be empty")
-
-    finite_number(risk_free_rate, "Risk-free rate")
     for stock in stocks:
-        if not isinstance(stock.get("name"), str) or not stock["name"].strip():
-            raise ValueError("Stock name cannot be empty")
-        for key in ("return", "volatility", "weight"):
-            finite_number(stock.get(key), key)
+        if not isinstance(stock.get("name"), str) or stock["name"].strip() == "":
+            raise ValueError("Elk aandeel heeft een naam nodig")
+        check_number(stock.get("return"), "Het rendement")
+        check_number(stock.get("volatility"), "De volatiliteit")
+        check_number(stock.get("weight"), "Het gewicht")
         if stock["weight"] < 0 or stock["volatility"] < 0:
-            raise ValueError("Weight and volatility must be nonnegative")
+            raise ValueError("Gewicht en volatiliteit mogen niet negatief zijn")
 
-    weights = []
+    total_weight = 0
     for stock in stocks:
-        weights.append(stock["weight"])
-    # fsum telt kommagetallen nauwkeurig op.
-    total_weight = fsum(weights)
+        total_weight += stock["weight"]
+    # Kommagetallen geven kleine afrondingsfouten, daarom een kleine marge.
+    if abs(total_weight - 1) > 0.00000001:
+        raise ValueError("De gewichten moeten samen 100% zijn")
 
-    # De tolerantie vangt kleine afrondingsfouten op.
-    if abs(total_weight - 1.0) > 1e-8:
-        raise ValueError("Portfolio weights must sum to 1")
-
-    return_contributions = []
-    portfolio_variance = 0
+    expected_return = 0
+    variance = 0
     for stock in stocks:
-        weight = stock["weight"]
-        stock_return = stock["return"]
-        stock_volatility = stock["volatility"]
-        return_contributions.append(weight * stock_return)
-        # Bij nulcorrelaties vallen de covariantietermen weg.
-        portfolio_variance += (weight * stock_volatility) ** 2
+        expected_return += stock["weight"] * stock["return"]
+        # Bij nulcorrelaties tellen we alleen (gewicht * volatiliteit)² op.
+        variance += (stock["weight"] * stock["volatility"]) ** 2
+    volatility = sqrt(variance)
 
-    expected_return = fsum(return_contributions)
-    portfolio_volatility = sqrt(portfolio_variance)
+    if volatility == 0:
+        raise ValueError("De volatiliteit van de portefeuille moet groter dan 0 zijn")
 
-    if portfolio_volatility == 0:
-        raise ValueError("Portfolio volatility must be positive")
-
-    sharpe_ratio = (
-        expected_return - risk_free_rate
-    ) / portfolio_volatility
-
-    finite_number(sharpe_ratio, "Sharpe ratio")
-
-    return {
-        "return": expected_return,
-        "volatility": portfolio_volatility,
-        "sharpe": sharpe_ratio
-    }
+    sharpe = (expected_return - risk_free_rate) / volatility
+    return {"return": expected_return, "volatility": volatility, "sharpe": sharpe}
 
 
 def optimal_weights(stocks, risk_free_rate):
@@ -82,64 +86,47 @@ def optimal_weights(stocks, risk_free_rate):
     Elk gewicht is evenredig met (rendement - risk-free rate) / volatiliteit².
     Aandelen die niet meer opbrengen dan de risk-free rate krijgen gewicht 0.
     """
-
     # Stap 1: geef elk aandeel een score.
     scores = []
     for stock in stocks:
         extra_return = stock["return"] - risk_free_rate
-        variance = stock["volatility"] ** 2
         if extra_return <= 0:
             scores.append(0)
-        elif variance == 0:
-            # Geen risico en toch meer rendement geeft een oneindige Sharpe ratio.
-            raise ValueError("Every stock needs a volatility above 0 to calculate optimal weights")
+        elif stock["volatility"] == 0:
+            # Meer rendement zonder risico zou een oneindige Sharpe ratio geven.
+            raise ValueError("elk aandeel heeft een volatiliteit boven 0 nodig")
         else:
-            scores.append(extra_return / variance)
+            scores.append(extra_return / stock["volatility"] ** 2)
 
     total_score = sum(scores)
     if total_score == 0:
-        raise ValueError("No stock returns more than the risk-free rate, so there are no optimal weights")
+        raise ValueError("geen enkel aandeel brengt meer op dan de risk-free rate")
 
     # Stap 2: deel elke score door het totaal, zodat de gewichten samen 1 zijn.
     optimal_stocks = []
     for index in range(len(stocks)):
-        stock = stocks[index]
         optimal_stocks.append({
-            "name": stock["name"],
-            "return": stock["return"],
-            "volatility": stock["volatility"],
+            "name": stocks[index]["name"],
+            "return": stocks[index]["return"],
+            "volatility": stocks[index]["volatility"],
             "weight": scores[index] / total_score,
         })
 
-    # Stap 3: bereken rendement, volatiliteit en Sharpe ratio van de optimale weging.
+    # Stap 3: bereken rendement, volatiliteit en Sharpe ratio van die weging.
     result = calculate_portfolio(optimal_stocks, risk_free_rate)
     result["stocks"] = optimal_stocks
     return result
 
 
-def sharpe_score(entry):
-    """Geef sorted het veld waarmee het moet sorteren."""
+def sharpe_of(entry):
+    """Geef sorted() het getal waarop het moet sorteren."""
     return entry["sharpe"]
 
 
 def leaderboard(users):
-    """Rank users from highest to lowest Sharpe ratio."""
-
+    """Rangschik gebruikers van hoogste naar laagste Sharpe ratio."""
     ranking = []
-
     for user in users:
-        result = calculate_portfolio(
-            user["stocks"],
-            user["risk_free_rate"]
-        )
-
-        ranking.append({
-            "username": user["username"],
-            "sharpe": result["sharpe"]
-        })
-
-    return sorted(
-        ranking,
-        key=sharpe_score,
-        reverse=True
-    )
+        result = calculate_portfolio(user["stocks"], user["risk_free_rate"])
+        ranking.append({"username": user["username"], "sharpe": result["sharpe"]})
+    return sorted(ranking, key=sharpe_of, reverse=True)

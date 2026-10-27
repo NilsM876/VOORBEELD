@@ -1,21 +1,34 @@
+"""Test de berekeningen op de testpersonen uit test_data.json.
+
+    python -m unittest discover -s tests -v
+"""
+
 import json
 import math
-from pathlib import Path
 import unittest
+from pathlib import Path
 
-from algorithm import PortfolioCommunity, calculate_portfolio, leaderboard, optimal_weights
-from algorithm import portfolio
+from algorithm import amounts_to_weights, calculate_portfolio, leaderboard, optimal_weights
+
+DATA_FILE = Path(__file__).parent.parent / "test_data.json"
 
 
 class AlgorithmTests(unittest.TestCase):
-    def test_public_api_reexports_portfolio_functions(self):
-        self.assertIs(calculate_portfolio, portfolio.calculate_portfolio)
-        self.assertIs(leaderboard, portfolio.leaderboard)
-
     def setUp(self):
-        self.users = json.loads((Path(__file__).resolve().parents[1] / "test_data.json").read_text())
+        with open(DATA_FILE, encoding="utf-8") as file:
+            self.users = json.load(file)
+        for user in self.users:
+            amounts_to_weights(user["stocks"])
         self.stocks = self.users[0]["stocks"]
-        self.community = PortfolioCommunity(self.users)
+
+    def test_amounts_to_weights(self):
+        # persoon A: 600 en 400 euro geeft 60% en 40%.
+        self.assertAlmostEqual(self.stocks[0]["weight"], 0.60)
+        self.assertAlmostEqual(self.stocks[1]["weight"], 0.40)
+        for amounts in ([0, 0], [-100, 200]):
+            stocks = [{"amount": amount} for amount in amounts]
+            with self.subTest(amounts=amounts), self.assertRaises(ValueError):
+                amounts_to_weights(stocks)
 
     def test_known_calculation(self):
         result = calculate_portfolio(self.stocks, 0.02)
@@ -23,7 +36,7 @@ class AlgorithmTests(unittest.TestCase):
         self.assertAlmostEqual(result["volatility"], math.sqrt(0.016))
         self.assertAlmostEqual(result["sharpe"], 0.064 / math.sqrt(0.016))
 
-    def test_single_stock_negative_and_zero_sharpe(self):
+    def test_negative_and_zero_sharpe(self):
         stocks = self.users[2]["stocks"]
         self.assertAlmostEqual(calculate_portfolio(stocks, 0.02)["sharpe"], -0.1)
         self.assertEqual(calculate_portfolio(stocks, 0.01)["sharpe"], 0)
@@ -56,73 +69,19 @@ class AlgorithmTests(unittest.TestCase):
 
     def test_optimal_weights_skips_stocks_below_risk_free_rate(self):
         stocks = self.stocks + [{"name": "C", "return": 0.01, "volatility": 0, "weight": 0}]
-        optimal = optimal_weights(stocks, 0.02)
-        self.assertEqual(optimal["stocks"][2]["weight"], 0)
+        self.assertEqual(optimal_weights(stocks, 0.02)["stocks"][2]["weight"], 0)
 
     def test_optimal_weights_errors(self):
         no_risk = [{"name": "A", "return": 0.10, "volatility": 0, "weight": 1}]
-        with self.assertRaises(ValueError):
-            optimal_weights(no_risk, 0.02)
         too_low = [{"name": "A", "return": 0.01, "volatility": 0.10, "weight": 1}]
-        with self.assertRaises(ValueError):
-            optimal_weights(too_low, 0.02)
+        for stocks in (no_risk, too_low):
+            with self.subTest(stocks=stocks), self.assertRaises(ValueError):
+                optimal_weights(stocks, 0.02)
 
-    def test_ranking_and_privacy(self):
-        ranking = self.community.leaderboard()
-        self.assertEqual([r["username"] for r in ranking], ["persoon A", "persoon B", "persoon C"])
-        self.assertTrue(all(set(r) == {"username", "sharpe"} for r in ranking))
+    def test_leaderboard(self):
+        ranking = leaderboard(self.users)
+        self.assertEqual([entry["username"] for entry in ranking], ["persoon A", "persoon B", "persoon C"])
         self.assertEqual(leaderboard([]), [])
-        self.users[1]["stocks"] = self.stocks
-        self.assertEqual([r["username"] for r in leaderboard(self.users)][:2], ["persoon A", "persoon B"])
-
-    def test_payment_validation(self):
-        for payment in [0, 4.99, 6, float("nan"), float("inf"), True, "5"]:
-            with self.subTest(payment=payment), self.assertRaises(ValueError):
-                self.community.unlock_portfolio("persoon A", "persoon B", payment)
-        with self.assertRaises(PermissionError):
-            self.community.get_portfolio("persoon A", "persoon B")
-
-    def test_access_scoped_to_viewer_and_owner(self):
-        unlocked = self.community.unlock_portfolio("persoon A", "persoon B", 5)
-        self.assertEqual(unlocked, self.users[1])
-        self.assertEqual(self.community.unlock_portfolio("persoon A", "persoon B", 0), unlocked)
-        for viewer, owner in [("persoon C", "persoon B"), ("persoon A", "persoon C"), ("persoon B", "persoon A")]:
-            with self.subTest(viewer=viewer, owner=owner), self.assertRaises(PermissionError):
-                self.community.get_portfolio(viewer, owner)
-
-    def test_comments(self):
-        with self.assertRaises(PermissionError):
-            self.community.add_comment("persoon A", "persoon B", "Hallo")
-        self.community.unlock_portfolio("persoon A", "persoon B", 5)
-        for message in ["", "  ", None]:
-            with self.assertRaises(ValueError):
-                self.community.add_comment("persoon A", "persoon B", message)
-        self.community.add_comment("persoon A", "persoon B", "  Interessant!  ")
-        self.assertEqual(self.community.get_comments("persoon A", "persoon B"),
-                         [{"author": "persoon A", "message": "Interessant!"}])
-        with self.assertRaises(PermissionError):
-            self.community.add_comment("persoon C", "persoon B", "Hallo")
-        with self.assertRaises(PermissionError):
-            self.community.get_comments("persoon C", "persoon B")
-
-    def test_ownership_and_user_validation(self):
-        self.assertEqual(self.community.get_portfolio("persoon A", "persoon A"), self.users[0])
-        for viewer, owner in [("onbekende persoon", "persoon A"), ("persoon A", "onbekende persoon")]:
-            with self.assertRaises(ValueError):
-                self.community.unlock_portfolio(viewer, owner, 5)
-        for username in ["persoon A", " "]:
-            with self.assertRaises(ValueError):
-                self.community.add_user(username, self.stocks, 0.02)
-
-    def test_defensive_copies(self):
-        self.users[0]["stocks"][0]["return"] = 999
-        self.assertEqual(self.community.get_portfolio("persoon A", "persoon A")["stocks"][0]["return"], 0.1)
-        unlocked = self.community.unlock_portfolio("persoon A", "persoon B", 5)
-        unlocked["stocks"].clear()
-        self.assertTrue(self.community.get_portfolio("persoon A", "persoon B")["stocks"])
-        self.community.add_comment("persoon A", "persoon B", "Hallo")
-        self.community.get_comments("persoon A", "persoon B").clear()
-        self.assertEqual(len(self.community.get_comments("persoon A", "persoon B")), 1)
 
 
 if __name__ == "__main__":

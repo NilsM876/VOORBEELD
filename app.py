@@ -10,6 +10,7 @@ from flask import Flask, render_template
 
 from config import Config
 from models import db
+from routes.community import bp as community_bp
 from routes.main import bp as main_bp
 
 app = Flask(__name__)
@@ -18,6 +19,7 @@ db.init_app(app)
 
 # Every file in routes/ is registered here, one line each.
 app.register_blueprint(main_bp)
+app.register_blueprint(community_bp)
 
 
 @app.errorhandler(404)

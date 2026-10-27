@@ -36,6 +36,13 @@ Then copy `.env.example` to `.env`, fill in the database details, and check the 
 
 ```
 python check_db.py
+```
+
+The first time, run `database/ddl.sql` against your group database (from the client you
+use for Database Systems), then put the test persons in it and start the website:
+
+```
+python seed_db.py
 flask --app app run --debug
 ```
 
@@ -78,9 +85,14 @@ models.py           one class per table
 routes/             one file per part of the application
 templates/          base.html and one template per page
 static/css/         your own styles, on top of Bootstrap
+static/js/          adds stock rows and recalculates while you type
 algorithm/          the core logic of your algorithm, without Flask
 database/           ddl.sql and, at the end, dump.sql
-docs/               user stories and prototype screenshots
+docs/               user stories, prototype screenshots, code-uitleg.md
+tests/              automatic tests (python -m unittest discover -s tests -v)
+main.py             the algorithm in the terminal, on test_data.json
+test_data.json      fictional test persons
+seed_db.py          puts the test persons in the database
 check_db.py         tests the database connection on its own
 .env.example        what your .env looks like, without the passwords
 ```

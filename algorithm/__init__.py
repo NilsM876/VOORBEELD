@@ -1,19 +1,11 @@
-﻿"""Public API for the standalone portfolio core, without Flask."""
+﻿"""Hierdoor kun je schrijven: from algorithm import calculate_portfolio."""
 
 from .portfolio import (
     CORRELATION_LIMITATION,
+    amounts_to_weights,
     calculate_portfolio,
-    finite_number,
+    check_number,
     leaderboard,
     optimal_weights,
+    sharpe_of,
 )
-from .community import PortfolioCommunity
-
-__all__ = [
-    "CORRELATION_LIMITATION",
-    "calculate_portfolio",
-    "finite_number",
-    "leaderboard",
-    "optimal_weights",
-    "PortfolioCommunity",
-]

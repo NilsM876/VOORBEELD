@@ -9,6 +9,8 @@ from flask_sqlalchemy import SQLAlchemy
 db = SQLAlchemy()
 
 
+# Er is nog geen login: email en password_hash krijgen bij publiceren een
+# vaste invulwaarde, omdat de kolommen verplicht zijn.
 class User(db.Model):
     __tablename__ = "User"
     user_id       = db.Column(db.Integer, primary_key=True)
@@ -22,7 +24,7 @@ class Asset(db.Model):
     __tablename__ = "Asset"
     asset_id   = db.Column(db.Integer, primary_key=True)
     ticker     = db.Column(db.String(30), nullable=False)
-    exchange   = db.Column(db.String(30), nullable=False)
+    exchange   = db.Column(db.String(30))
     asset_name = db.Column(db.String(200))
     currency   = db.Column(db.String(10))
 
@@ -51,7 +53,10 @@ class PortfolioHolding(db.Model):
     __tablename__ = "PortfolioHolding"
     portfolio_id     = db.Column(db.Integer, db.ForeignKey("Portfolio.portfolio_id"), primary_key=True)
     asset_id         = db.Column(db.Integer, db.ForeignKey("Asset.asset_id"), primary_key=True)
-    price            = db.Column(db.Numeric(18, 6), nullable=False)
+    amount           = db.Column(db.Numeric(18, 2), nullable=False)
+    expected_return  = db.Column(db.Numeric(12, 8), nullable=False)
+    volatility       = db.Column(db.Numeric(12, 8), nullable=False)
+    price            = db.Column(db.Numeric(18, 6))
     input_weight     = db.Column(db.Numeric(10, 8))
     optimized_weight = db.Column(db.Numeric(10, 8))
 
@@ -60,8 +65,8 @@ class PortfolioAnalysis(db.Model):
     __tablename__ = "PortfolioAnalysis"
     analysis_id          = db.Column(db.Integer, primary_key=True)
     portfolio_id         = db.Column(db.Integer, db.ForeignKey("Portfolio.portfolio_id"), nullable=False)
-    start_date           = db.Column(db.Date, nullable=False)
-    end_date             = db.Column(db.Date, nullable=False)
+    start_date           = db.Column(db.Date)
+    end_date             = db.Column(db.Date)
     risk_free_rate       = db.Column(db.Numeric(12, 8))
     annual_return        = db.Column(db.Numeric(12, 8))
     annual_volatility    = db.Column(db.Numeric(12, 8))
@@ -90,6 +95,15 @@ class LeaderboardEntry(db.Model):
     user_id      = db.Column(db.Integer, db.ForeignKey("User.user_id"), nullable=False)
     published_at = db.Column(db.DateTime, nullable=False)
     is_visible   = db.Column(db.Boolean, nullable=False)
+
+
+# De sleutel bestaat uit twee kolommen: user_id en portfolio_id.
+class PortfolioUnlock(db.Model):
+    __tablename__ = "PortfolioUnlock"
+    user_id      = db.Column(db.Integer, db.ForeignKey("User.user_id"), primary_key=True)
+    portfolio_id = db.Column(db.Integer, db.ForeignKey("Portfolio.portfolio_id"), primary_key=True)
+    amount_eur   = db.Column(db.Numeric(6, 2), nullable=False)
+    unlocked_at  = db.Column(db.DateTime, nullable=False)
 
 
 class Comment(db.Model):

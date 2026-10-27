@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Portefeuille van {{ owner.username }}{% endblock %}
+{% block content %}
+<h1>Portefeuille van {{ owner.username }}</h1>
+<p>Sharpe ratio: {{ '%.4f'|format(analysis.sharpe_ratio) }}</p>
+
+{% if not access %}
+  {# De paywall: zonder ontgrendeling zie je alleen de Sharpe ratio. #}
+  <div class="border rounded p-3">
+    <p>De volledige portefeuille zie je na een betaling van €{{ price }}. Dit is een simulatie: er wordt geen echt geld aangerekend.</p>
+    {% if user %}
+      <form method="post" action="{{ url_for('community.unlock', portfolio_id=portfolio.portfolio_id) }}">
+        <button class="btn btn-primary">Ontgrendelen voor €{{ price }}</button>
+      </form>
+    {% else %}
+      <p>Publiceer eerst je eigen portefeuille op de <a href="{{ url_for('main.home') }}">startpagina</a>, daarna kun je andere portefeuilles ontgrendelen.</p>
+    {% endif %}
+  </div>
+{% else %}
+  <p>Verwacht rendement: {{ '%.2f'|format(analysis.annual_return * 100) }}% &middot;
+     Volatiliteit: {{ '%.2f'|format(analysis.annual_volatility * 100) }}% &middot;
+     Risk-free rate: {{ '%.2f'|format(analysis.risk_free_rate * 100) }}%</p>
+  <table class="table">
+    <thead><tr><th>Aandeel</th><th>Rendement (%)</th><th>Standaarddeviatie (%)</th><th>Bedrag (€)</th><th>Gewicht (%)</th></tr></thead>
+    <tbody>
+    {% for stock in stocks %}
+      <tr>
+        <td>{{ stock.name }}</td>
+        <td>{{ '%.2f'|format(stock['return'] * 100) }}</td>
+        <td>{{ '%.2f'|format(stock.volatility * 100) }}</td>
+        <td>{{ '%.2f'|format(stock.amount) }}</td>
+        <td>{{ '%.2f'|format(stock.weight * 100) }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Commentaar</h2>
+  {% for comment in comments %}
+    <p><strong>{{ comment.author }}</strong>: {{ comment.content }}</p>
+  {% else %}
+    <p>Nog geen commentaar.</p>
+  {% endfor %}
+  <form method="post" action="{{ url_for('community.comment', portfolio_id=portfolio.portfolio_id) }}">
+    <label class="w-100">Jouw commentaar <textarea class="form-control" name="content" required></textarea></label>
+    <button class="btn btn-primary mt-2">Plaatsen</button>
+  </form>
+{% endif %}
+
+<p class="mt-4"><a href="{{ url_for('main.home') }}">Terug naar het leaderboard</a></p>
+{% endblock %}

@@ -1,16 +1,19 @@
 ﻿{% extends "base.html" %}
-{% block title %}Portefeuille en Sharpe ratio{% endblock %}
+{% block title %}Sharply{% endblock %}
 {% block content %}
 <h1>Portefeuille en Sharpe ratio</h1>
 <p class="alert alert-warning">{{ limitation }}</p>
-<p>Voer per aandeel het bedrag in euro in; de app rekent zelf de gewichten uit. Voer rendementen en standaarddeviaties in als percentage: 10 voor 10%. Ze zijn jaarlijks.</p>
-{% if error %}<p class="alert alert-danger" role="alert">{{ error }}</p>{% endif %}
+<p>Voer per aandeel het bedrag in euro in; de app rekent zelf de gewichten uit.
+   Rendement en standaarddeviatie zijn jaarlijks, als percentage: 10 voor 10%.</p>
+
+{% if error %}<p class="alert alert-danger" role="alert">Controleer je invoer. {{ error }}.</p>{% endif %}
+
 <form method="post" id="portfolio-form">
   <div id="stocks">
   {% for row in rows %}
     <fieldset class="stock border rounded p-3 mb-3">
       <legend>Aandeel</legend>
-      <label>Naam of ticker <input class="form-control" name="name" value="{{ row.name }}" required></label>
+      <label>Naam of ticker <input class="form-control" name="name" maxlength="30" value="{{ row.name }}" required></label>
       <label>Verwacht jaarlijks rendement (%) <input class="form-control" type="number" step="any" name="return" value="{{ row['return'] }}" required></label>
       <label>Jaarlijkse standaarddeviatie (%) <input class="form-control" type="number" min="0" step="any" name="volatility" value="{{ row.volatility }}" required></label>
       <label>Bedrag (€) <input class="form-control" type="number" min="0" step="any" name="amount" value="{{ row.amount }}" required></label>
@@ -19,48 +22,63 @@
   {% endfor %}
   </div>
   <button type="button" id="add-stock" class="btn btn-secondary">Aandeel toevoegen</button>
-  <p id="amount-total" aria-live="polite"></p>
-  <label>Risk-free rate voor de volledige portefeuille (%) <input class="form-control" type="number" step="any" name="risk_free_rate" value="{{ rate }}" required></label>
-  <p class="mt-4"><button class="btn btn-primary" name="action" value="calculate">Portefeuille-overzicht berekenen</button></p>
-  <p class="mt-3"><label>Unieke gebruikersnaam voor publicatie <input class="form-control" name="username" value="{{ username }}"></label>
-  <button class="btn btn-outline-primary" name="action" value="publish">Berekenen en publiceren</button></p>
+  <p id="amount-total"></p>
+  <label>Risk-free rate (%) <input class="form-control" type="number" step="any" name="risk_free_rate" value="{{ rate }}" required></label>
+  <p class="mt-4"><button class="btn btn-primary" name="action" value="calculate">Berekenen</button></p>
+  <p class="mt-3">
+    <label>Unieke gebruikersnaam <input class="form-control" name="username" maxlength="100" value="{{ username }}"></label>
+    <button class="btn btn-outline-primary" name="action" value="publish">Berekenen en publiceren</button>
+  </p>
 </form>
-<section aria-live="polite" id="result">
+
+{# portfolio.js vervangt de inhoud van deze sectie terwijl je typt. #}
+<section id="result">
 {% if result %}
-<h2>Resultaat</h2>
-<p>Verwacht portefeuillerendement: {{ '%.2f'|format(result['return'] * 100) }}%</p>
-<p>Portefeuillevolatiliteit: {{ '%.2f'|format(result.volatility * 100) }}%</p>
-<p>Sharpe ratio: {{ '%.4f'|format(result.sharpe) }}</p>
-<h3>Optimale weging</h3>
-{% if optimal %}
-<table class="table"><thead><tr><th>Aandeel</th><th>Jouw gewicht (%)</th><th>Optimaal gewicht (%)</th><th>Optimaal bedrag (€)</th></tr></thead><tbody>
-{% for stock in optimal.stocks %}<tr><td>{{ stock.name }}</td><td>{{ '%.2f'|format(stocks[loop.index0].weight * 100) }}</td><td>{{ '%.2f'|format(stock.weight * 100) }}</td><td>{{ '%.2f'|format(stock.weight * total_amount) }}</td></tr>{% endfor %}
-<tr><th>Sharpe ratio</th><th>{{ '%.4f'|format(result.sharpe) }}</th><th>{{ '%.4f'|format(optimal.sharpe) }}</th><th></th></tr>
-</tbody></table>
-{% else %}
-<p class="alert alert-info">Geen optimale weging mogelijk: {{ optimal_error }}.</p>
-{% endif %}
+  <h2>Resultaat</h2>
+  <p>Verwacht rendement: {{ '%.2f'|format(result['return'] * 100) }}%</p>
+  <p>Volatiliteit: {{ '%.2f'|format(result.volatility * 100) }}%</p>
+  <p>Sharpe ratio: {{ '%.4f'|format(result.sharpe) }}</p>
+
+  <h3>Optimale weging</h3>
+  {% if optimal %}
+  <table class="table">
+    <thead><tr><th>Aandeel</th><th>Jouw gewicht (%)</th><th>Optimaal gewicht (%)</th><th>Optimaal bedrag (€)</th></tr></thead>
+    <tbody>
+    {# loop.index0 is het rijnummer, vanaf 0: zo vinden we hetzelfde aandeel in stocks. #}
+    {% for stock in optimal.stocks %}
+      <tr>
+        <td>{{ stock.name }}</td>
+        <td>{{ '%.2f'|format(stocks[loop.index0].weight * 100) }}</td>
+        <td>{{ '%.2f'|format(stock.weight * 100) }}</td>
+        <td>{{ '%.2f'|format(stock.weight * total_amount) }}</td>
+      </tr>
+    {% endfor %}
+      <tr><th>Sharpe ratio</th><th>{{ '%.4f'|format(result.sharpe) }}</th><th>{{ '%.4f'|format(optimal.sharpe) }}</th><th></th></tr>
+    </tbody>
+  </table>
+  {% else %}
+  <p class="alert alert-info">Geen optimale weging mogelijk: {{ optimal_error }}.</p>
+  {% endif %}
 {% endif %}
 </section>
+
 <h2>Leaderboard</h2>
-<p>Fictieve voorbeeldportefeuilles en gepubliceerde invoer. Gegevens en ontgrendelingen blijven in het geheugen tot de server herstart. {% if viewer %}Actieve gebruiker: {{ viewer }}.{% endif %}</p>
-<table class="table"><thead><tr><th>Gebruiker</th><th>Sharpe ratio</th><th>Portefeuille</th></tr></thead><tbody>
-{% for entry in ranking %}
-<tr><td>{{ entry.username }}</td><td>{{ '%.4f'|format(entry.sharpe) }}</td><td>
-<form method="post" action="#opened-portfolio"><input type="hidden" name="owner" value="{{ entry.username }}"><button class="btn btn-outline-secondary" name="action" value="unlock">{% if viewer == entry.username %}Eigen portefeuille bekijken{% else %}Ontgrendelen — €5 (simulatie){% endif %}</button></form>
-</td></tr>
-{% endfor %}
-</tbody></table>
-<p>Er wordt geen echt geld aangerekend. Een ontgrendelde portefeuille opnieuw bekijken is gratis.</p>
-{% if opened %}
-<h2 id="opened-portfolio">Portefeuille van {{ opened.username }}</h2>
-<p>Risk-free rate: {{ '%.2f'|format(opened.risk_free_rate * 100) }}%</p>
-<table class="table"><thead><tr><th>Aandeel</th><th>Rendement (%)</th><th>Standaarddeviatie (%)</th><th>Gewicht (%)</th></tr></thead><tbody>
-{% for stock in opened.stocks %}<tr><td>{{ stock.name }}</td><td>{{ '%.2f'|format(stock['return'] * 100) }}</td><td>{{ '%.2f'|format(stock.volatility * 100) }}</td><td>{{ '%.2f'|format(stock.weight * 100) }}</td></tr>{% endfor %}
-</tbody></table>
-<h3>Commentaar</h3>
-{% for comment in comments %}<p><strong>{{ comment.author }}</strong>: {{ comment.message }}</p>{% endfor %}
-{% if viewer != opened.username %}<form method="post" action="#opened-portfolio"><input type="hidden" name="owner" value="{{ opened.username }}"><label>Commentaar <textarea class="form-control" name="message" required></textarea></label><button class="btn btn-primary" name="action" value="comment">Plaatsen</button></form>{% endif %}
-{% endif %}
+{% if session.username %}<p>Je bent actief als {{ session.username }}.</p>{% endif %}
+<table class="table">
+  <thead><tr><th>Plaats</th><th>Gebruiker</th><th>Sharpe ratio</th><th></th></tr></thead>
+  <tbody>
+  {% for entry in ranking %}
+    <tr>
+      <td>{{ loop.index }}</td>
+      <td>{{ entry.username }}</td>
+      <td>{{ '%.4f'|format(entry.sharpe) }}</td>
+      <td><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('community.show', portfolio_id=entry.portfolio_id) }}">Portefeuille bekijken</a></td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4">Nog niemand heeft een portefeuille gepubliceerd.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
 <script src="{{ url_for('static', filename='js/portfolio.js') }}" defer></script>
 {% endblock %}
