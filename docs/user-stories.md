@@ -14,7 +14,6 @@ Acceptance criteria:
 - Ik kan meerdere aandelen toevoegen en verwijderen, elk met een ticker, een verwacht rendement, een volatiliteit en een bedrag in euro.
 - De app rekent de bedragen zelf om naar gewichten, bijvoorbeeld €600 van €1000 is 60%.
 - Lege of ongeldige invoer, een negatief bedrag of een totaal bedrag van 0 wordt geweigerd met een duidelijke foutmelding.
-- Bij het publiceren mag elke ticker maar één keer in mijn portefeuille staan.
 
 ### 2. Rendement en volatiliteit zien
 Als belegger wil ik het gemiddelde rendement en de volatiliteit van mijn portefeuille zien, zodat ik begrijp hoeveel risico ik loop voor mijn rendement.
@@ -36,7 +35,6 @@ Als belegger wil ik mijn Sharpe ratio onder mijn gebruikersnaam op het leaderboa
 Acceptance criteria:
 - Na het publiceren staat mijn gebruikersnaam met mijn Sharpe ratio op het leaderboard.
 - Een gebruikersnaam die al bestaat, wordt geweigerd.
-- Mijn portefeuille wordt in de database bewaard en blijft op het leaderboard staan, ook nadat de website herstart.
 
 ### 5. Leaderboard bekijken
 Als bezoeker wil ik onderaan de website een leaderboard zien met de hoogste Sharpe ratio bovenaan, zodat ik meteen zie wie de best presterende beleggers zijn.
@@ -51,15 +49,13 @@ Acceptance criteria:
 Als app-operator wil ik dat gebruikers via een paywall moeten betalen voordat ze de portefeuille van een ander kunnen bekijken, zodat de applicatie inkomsten genereert en lucratief wordt.
 
 Acceptance criteria:
-- Voor de betaling zie ik van een andere portefeuille alleen de naam van de eigenaar en de Sharpe ratio.
-- De volledige portefeuille van een ander is pas zichtbaar na een (gesimuleerde) betaling van €5.
-- Ik kan pas ontgrendelen nadat ik zelf een portefeuille gepubliceerd heb.
-- Een portefeuille die ik al ontgrendeld heb, kan ik gratis opnieuw bekijken. Mijn eigen portefeuille zie ik altijd gratis.
+- De portefeuille van een ander is pas zichtbaar na een (gesimuleerde) betaling van €5.
+- Een portefeuille die ik al ontgrendeld heb, kan ik gratis opnieuw bekijken.
 
 ### 7. Portefeuille bekijken en commentaar geven
 Als betalende gebruiker wil ik na de paywall de volledige portefeuille van een andere gebruiker zien en er commentaar bij plaatsen, zodat ik kan leren van hun keuzes en erover kan discussiëren.
 
 Acceptance criteria:
-- Na het ontgrendelen zie ik alle aandelen met hun rendement, standaarddeviatie, bedrag en gewicht.
+- Na het ontgrendelen zie ik alle aandelen met hun gewicht.
 - Ik kan commentaar plaatsen en zie het commentaar van andere gebruikers.
 - Lege commentaren worden geweigerd.
